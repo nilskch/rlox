@@ -1,7 +1,8 @@
 mod errors;
+mod repl;
 mod scanner;
 mod token;
 
 fn main() {
-    println!("Hello, world!");
+    repl::start();
 }

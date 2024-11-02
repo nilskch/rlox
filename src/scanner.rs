@@ -20,7 +20,7 @@ impl<'a> Scanner<'a> {
         }
     }
 
-    pub fn scan_tokens(&mut self) -> Vec<Token> {
+    pub fn scan_tokens(&'a mut self) -> Result<Vec<Token>, Vec<ScannerError>> {
         loop {
             let start = self.position;
             let ch = match self.advance() {
@@ -81,12 +81,42 @@ impl<'a> Scanner<'a> {
                     }
                 }
                 '"' => self.scan_string(start),
-                '0'..='9' => self.scan_number(start),
                 ' ' | '\t' | '\r' | '\n' => {}
-                _ => panic!("WHHAAT {}", &self.source[self.position..]),
+                ch => {
+                    if ch.is_ascii_digit() {
+                        self.scan_number(start)
+                    } else if ch.is_ascii_alphabetic() || ch == '_' {
+                        self.scan_identifier(start);
+                    } else {
+                        let err = ScannerError::IllegalTokenError {
+                            src: self.source.into(),
+                            span: Range::new(start, start).source_span(),
+                        };
+                        self.errors.push(err);
+                    }
+                }
             }
         }
-        self.tokens.clone()
+        if !self.errors.is_empty() {
+            Err(self.errors.clone())
+        } else {
+            Ok(self.tokens.clone())
+        }
+    }
+
+    fn scan_identifier(&mut self, start: usize) {
+        while self.peek_is_identifier_char() {
+            self.advance();
+        }
+        self.add_token(
+            TokenType::get_token_type(&self.source[start..self.position]),
+            start,
+        );
+    }
+
+    fn peek_is_identifier_char(&self) -> bool {
+        let ch = self.peek();
+        ch.is_ascii_alphanumeric() || ch == '_'
     }
 
     fn scan_string(&mut self, start: usize) {
@@ -95,14 +125,18 @@ impl<'a> Scanner<'a> {
         }
 
         if self.is_at_end() {
-            // TODO: handle unterminated string error
+            let err = ScannerError::UnterminatedStringError {
+                src: self.source.into(),
+                span: Range::new(start, self.position - 1).source_span(),
+            };
+            self.errors.push(err);
+        } else {
+            self.advance();
+            self.add_token(
+                TokenType::String(&self.source[start + 1..self.position - 1]),
+                start,
+            );
         }
-
-        self.advance();
-        self.add_token(
-            TokenType::String(&self.source[start + 1..self.position - 1]),
-            start,
-        );
     }
 
     fn scan_number(&mut self, start: usize) {
@@ -114,6 +148,17 @@ impl<'a> Scanner<'a> {
             self.advance();
             while self.peek().is_ascii_digit() {
                 self.advance();
+            }
+        }
+
+        match self.source[start..self.position].parse::<f32>() {
+            Ok(number) => self.add_token(TokenType::Number(number), start),
+            Err(_) => {
+                let err = ScannerError::NumberConversionError {
+                    src: self.source.into(),
+                    span: Range::new(start, self.position).source_span(),
+                };
+                self.errors.push(err);
             }
         }
     }
@@ -173,6 +218,13 @@ mod tests {
             // comment that gets ignored
             / "foo bar" "" "foo
 bar baz"
+123
+123.
+123.123.12300
+some_ident
+while
+if
+foo
         "#;
         let expected_tokens = [
             Token::new(TokenType::LeftParen, "(", Range::new(0, 1)),
@@ -205,10 +257,24 @@ bar baz"
                 "\"foo\nbar baz\"",
                 Range::new(120, 133),
             ),
+            Token::new(TokenType::Number(123.0), "123", Range::new(134, 137)),
+            Token::new(TokenType::Number(123.0), "123", Range::new(138, 141)),
+            Token::new(TokenType::Dot, ".", Range::new(141, 142)),
+            Token::new(TokenType::Number(123.123), "123.123", Range::new(143, 150)),
+            Token::new(TokenType::Dot, ".", Range::new(150, 151)),
+            Token::new(TokenType::Number(12300.0), "12300", Range::new(151, 156)),
+            Token::new(
+                TokenType::Identifier("some_ident"),
+                "some_ident",
+                Range::new(157, 167),
+            ),
+            Token::new(TokenType::While, "while", Range::new(168, 173)),
+            Token::new(TokenType::If, "if", Range::new(174, 176)),
+            Token::new(TokenType::Identifier("foo"), "foo", Range::new(177, 180)),
         ];
 
         let mut scanner = Scanner::new(source);
-        let tokens = scanner.scan_tokens();
+        let tokens = scanner.scan_tokens().expect("Expected no scanning errors");
 
         assert_eq!(
             tokens.len(),
@@ -217,13 +283,13 @@ bar baz"
         );
 
         for (i, token) in tokens.iter().enumerate() {
-            compare_tokens(expected_tokens.get(i).unwrap(), token);
+            let expected_token = expected_tokens.get(i).unwrap();
+            assert_eq!(
+                expected_token.token_type, token.token_type,
+                "wrong token type"
+            );
+            assert_eq!(expected_token.literal, token.literal, "wrong token literal");
+            assert_eq!(expected_token.range, token.range, "wrong range");
         }
-    }
-
-    fn compare_tokens(expected: &Token, actual: &Token) {
-        assert_eq!(expected.token_type, actual.token_type);
-        assert_eq!(expected.literal, actual.literal);
-        assert_eq!(expected.range, actual.range);
     }
 }
