@@ -8,3 +8,5 @@ to write an interpreter again with a better understanding of Rust and with more 
 The Lox programming language from the book [Crafting Interpreters](https://craftinginterpreters.com/) is much more feature-rich
 and the book provides more theory (and is much thicker). This repo is my attempt to port the Lox programming language to
 Rust and learn along the way.
+
+This is currently work in progress and will take a while. I'll update the README once I am done.
