@@ -17,8 +17,7 @@ pub fn start() {
             .expect("Failed to read line");
 
         let mut scanner = Scanner::new(&input);
-        let tokens = scanner.scan_tokens().clone();
-        match tokens {
+        match scanner.scan_tokens() {
             Ok(tokens) => {
                 for token in tokens {
                     println!("{:?}", token);
