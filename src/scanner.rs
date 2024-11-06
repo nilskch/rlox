@@ -88,7 +88,7 @@ impl<'a> Scanner<'a> {
                     } else if ch.is_ascii_alphabetic() || ch == '_' {
                         self.scan_identifier(start);
                     } else {
-                        let err = ScannerError::IllegalTokenError {
+                        let err = ScannerError::IllegalToken {
                             src: self.source.into(),
                             span: Range::new(start, start).source_span(),
                         };
@@ -126,7 +126,7 @@ impl<'a> Scanner<'a> {
         }
 
         if self.is_at_end() {
-            let err = ScannerError::UnterminatedStringError {
+            let err = ScannerError::UnterminatedString {
                 src: self.source.into(),
                 span: Range::new(start, self.position - 1).source_span(),
             };
@@ -155,7 +155,7 @@ impl<'a> Scanner<'a> {
         match self.source[start..self.position].parse::<f32>() {
             Ok(number) => self.add_token(TokenType::Number(number), start),
             Err(_) => {
-                let err = ScannerError::NumberConversionError {
+                let err = ScannerError::NumberConversion {
                     src: self.source.into(),
                     span: Range::new(start, self.position).source_span(),
                 };
@@ -165,17 +165,11 @@ impl<'a> Scanner<'a> {
     }
 
     fn peek(&self) -> char {
-        match self.source[self.position..].chars().next() {
-            Some(ch) => ch,
-            None => '\0',
-        }
+        self.source[self.position..].chars().next().unwrap_or('\0')
     }
 
     fn peek_peek(&self) -> char {
-        match self.source[self.position..].chars().nth(1) {
-            Some(ch) => ch,
-            None => '\0',
-        }
+        self.source[self.position..].chars().nth(1).unwrap_or('\0')
     }
 
     fn peek_is(&self, expected: char) -> bool {

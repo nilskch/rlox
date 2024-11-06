@@ -5,7 +5,7 @@ use thiserror::Error;
 pub enum ScannerError {
     #[error("Illegal token")]
     #[diagnostic(code(scanner::illegal_token_error))]
-    IllegalTokenError {
+    IllegalToken {
         #[source_code]
         src: String,
         #[label("this token is illegal")]
@@ -14,7 +14,7 @@ pub enum ScannerError {
 
     #[error("Unterminated string")]
     #[diagnostic(code(scanner::unterminated_string_error))]
-    UnterminatedStringError {
+    UnterminatedString {
         #[source_code]
         src: String,
         #[label("this string is unterminated")]
@@ -23,7 +23,7 @@ pub enum ScannerError {
 
     #[error("Failed to parse number")]
     #[diagnostic(code(scanner::number_conversion_error))]
-    NumberConversionError {
+    NumberConversion {
         #[source_code]
         src: String,
         #[label("could not parse this into a number")]
