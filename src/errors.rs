@@ -30,3 +30,6 @@ pub enum ScannerError {
         span: SourceSpan,
     },
 }
+
+#[derive(Debug, Clone, Error, Diagnostic)]
+pub enum ParserError {}

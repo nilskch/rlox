@@ -1,6 +1,8 @@
+use std::fmt::Debug;
+
 use miette::{SourceOffset, SourceSpan};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub enum TokenType<'a> {
     // Single-character tokens
     LeftParen,  // (
@@ -47,6 +49,8 @@ pub enum TokenType<'a> {
     True,   // true
     Var,    // var
     While,  // while
+
+    Eof,
 }
 
 impl<'a> TokenType<'a> {
@@ -73,11 +77,64 @@ impl<'a> TokenType<'a> {
     }
 }
 
-#[derive(Debug, Clone)]
+impl<'a> Debug for TokenType<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            // Single-character tokens
+            TokenType::LeftParen => write!(f, "("),
+            TokenType::RightParen => write!(f, ")"),
+            TokenType::LeftBrace => write!(f, "{{"),
+            TokenType::RightBrace => write!(f, "}}"),
+            TokenType::Comma => write!(f, ","),
+            TokenType::Dot => write!(f, "."),
+            TokenType::Minus => write!(f, "-"),
+            TokenType::Plus => write!(f, "+"),
+            TokenType::Semicolon => write!(f, ";"),
+            TokenType::Slash => write!(f, "/"),
+            TokenType::Star => write!(f, "*"),
+
+            // One or two character tokens
+            TokenType::Bang => write!(f, "!"),
+            TokenType::BangEqual => write!(f, "!="),
+            TokenType::Equal => write!(f, "="),
+            TokenType::EqualEqual => write!(f, "=="),
+            TokenType::Greater => write!(f, ">"),
+            TokenType::GreaterEqual => write!(f, ">="),
+            TokenType::Less => write!(f, "<"),
+            TokenType::LessEqual => write!(f, "<="),
+
+            // Literals
+            TokenType::Identifier(ident) => write!(f, "{}", ident),
+            TokenType::String(value) => write!(f, "{}", value),
+            TokenType::Number(value) => write!(f, "{}", value),
+
+            // Keywords
+            TokenType::And => write!(f, "and"),
+            TokenType::Class => write!(f, "class"),
+            TokenType::Else => write!(f, "else"),
+            TokenType::False => write!(f, "false"),
+            TokenType::Fun => write!(f, "fun"),
+            TokenType::For => write!(f, "for"),
+            TokenType::If => write!(f, "if"),
+            TokenType::Nil => write!(f, "nil"),
+            TokenType::Or => write!(f, "or"),
+            TokenType::Print => write!(f, "print"),
+            TokenType::Return => write!(f, "return"),
+            TokenType::Super => write!(f, "super"),
+            TokenType::This => write!(f, "this"),
+            TokenType::True => write!(f, "true"),
+            TokenType::Var => write!(f, "var"),
+            TokenType::While => write!(f, "while"),
+            TokenType::Eof => write!(f, "eof"),
+        }
+    }
+}
+
+#[derive(Clone)]
 pub struct Token<'a> {
-    pub(crate) token_type: TokenType<'a>,
-    pub(crate) literal: &'a str,
-    pub(crate) range: Range,
+    pub token_type: TokenType<'a>,
+    pub literal: &'a str,
+    pub range: Range,
 }
 
 impl<'a> Token<'a> {
@@ -90,10 +147,16 @@ impl<'a> Token<'a> {
     }
 }
 
+impl<'a> Debug for Token<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self.token_type)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Range {
-    pub(crate) start: usize,
-    pub(crate) end: usize,
+    pub start: usize,
+    pub end: usize,
 }
 
 impl Range {

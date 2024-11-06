@@ -100,6 +100,7 @@ impl<'a> Scanner<'a> {
         if !self.errors.is_empty() {
             Err(self.errors.clone())
         } else {
+            self.add_token(TokenType::Eof, self.position);
             Ok(self.tokens.clone())
         }
     }
@@ -224,8 +225,7 @@ bar baz"
 some_ident
 while
 if
-foo
-        "#;
+foo"#;
         let expected_tokens = [
             Token::new(TokenType::LeftParen, "(", Range::new(0, 1)),
             Token::new(TokenType::RightParen, ")", Range::new(2, 3)),
@@ -271,6 +271,7 @@ foo
             Token::new(TokenType::While, "while", Range::new(168, 173)),
             Token::new(TokenType::If, "if", Range::new(174, 176)),
             Token::new(TokenType::Identifier("foo"), "foo", Range::new(177, 180)),
+            Token::new(TokenType::Eof, "", Range::new(180, 180)),
         ];
 
         let mut scanner = Scanner::new(source);
